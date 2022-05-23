@@ -6,6 +6,7 @@ const findAllPalletas = async () => {
   const paletas = await response.json();
 
   paletas.forEach((paleta) => {
+    let isEdit = true;
     document.getElementById("paletaList").insertAdjacentHTML(
       "beforeend",
       `<div class="PaletaListaItem" id="PaletaListaItem_'${paleta._id}'"><div>
@@ -16,10 +17,10 @@ const findAllPalletas = async () => {
                   paleta.descricao
                 }</div>
 
-                <div class="PaletaListaItem__acoes Acoes">
-                <button class="Acoes__editar btn" onclick="abrirModal('${
-                  paleta._id
-                }')">editar</button>
+              <div class="PaletaListaItem__acoes Acoes">
+              <div class="Acoes__editar "id=${
+                paleta._id
+              } onclick="abrirModal(${isEdit})">Editar</div>
                 <button class="Acoes__deletar" onclick="deletePaleta('${
                   paleta._id
                 }')">deletar</button>
@@ -73,16 +74,18 @@ const findPaletaById = async () => {
   }
 };
 
-async function abrirModal(id = null) {
-  if (id != null) {
+async function abrirModal(isEdit = false) {
+  if (isEdit) {
     document.querySelector("#title-header-modal").innerText =
       "Atualizar uma Paleta";
     document.querySelector("#submit-modal-button").innerText = "Atualizar";
 
+    const id = event.target.id;
+
     const response = await fetch(`${baseUrl}/find-paleta/${id}`);
     const paleta = await response.json();
 
-    document.querySelector("#id").value = paleta.id;
+    document.querySelector("#id").value = paleta._id;
     document.querySelector("#sabor").value = paleta.sabor;
     document.querySelector("#preco").value = paleta.preco;
     document.querySelector("#descricao").value = paleta.descricao;
@@ -104,8 +107,8 @@ function fecharModal() {
   document.querySelector("#foto").value = "";
 }
 
-async function createPaleta() {
-  const id = document.querySelector("#id").value;
+async function submitPaleta() {
+  const id = document.getElementById("id").value;
   const sabor = document.querySelector("#sabor").value;
   const preco = document.querySelector("#preco").value;
   const descricao = document.querySelector("#descricao").value;
@@ -119,7 +122,7 @@ async function createPaleta() {
     foto,
   };
 
-  const modoEdicaoAtivado = id != "";
+  const modoEdicaoAtivado = !!id;
 
   const endpoint = baseUrl + (modoEdicaoAtivado ? `/update/${id}` : `/create`);
 
@@ -134,6 +137,7 @@ async function createPaleta() {
 
   const novaPaleta = await response.json();
 
+  let isEdit = true;
   const html = `
     <div class="PaletaListaItem" id="PaletaListaItem_'${paleta._id}'">
         <div>
@@ -143,11 +147,11 @@ async function createPaleta() {
               novaPaleta.descricao
             }</div>
             <div class="PaletaListaItem__acoes Acoes">
-                <button class="Acoes__editar" onclick="abrirModal('${
-                  paleta._id
-                }')">editar</button>
+            <div class="Acoes__editar "id=${
+              paleta._id
+            } onclick="abrirModal(${isEdit})">Editar</div>
                 <button class="Acoes__deletar" onclick="deletePaleta('${
-                  novaPaleta._id
+                  paleta._id
                 }')">deletar</button>
             </div>
         </div>
@@ -157,27 +161,16 @@ async function createPaleta() {
     </div>`;
 
   if (modoEdicaoAtivado) {
-    document.querySelector(`#PaletaListaItem_'${id}'`).outerHTML = html;
+    document.querySelector(`#PaletaListaItem_${id}`).outerHTML = html;
   } else {
     document.getElementById("paletaList").insertAdjacentHTML("beforeend", html);
   }
 
+  document.getElementById("id").value = "";
+
   fecharModal();
+  document.location.reload(true);
 }
-
-const editPaleta = async (id) => {
-  abrirModalUpdate();
-  const response = await fetch(`${baseUrl}/update/${id}`);
-  console.log("id do editPaleta: ", id);
-
-  const paleta = await response.json();
-
-  document.getElementById("id").value = paleta.id;
-  document.getElementById("sabor").value = paleta.sabor;
-  document.getElementById("descricao").value = paleta.descricao;
-  document.getElementById("foto").value = paleta.foto;
-  document.getElementById("preco").value = paleta.preco;
-};
 
 const deletePaleta = async (id) => {
   const response = await fetch(`${baseUrl}/delete/${id}`, {
